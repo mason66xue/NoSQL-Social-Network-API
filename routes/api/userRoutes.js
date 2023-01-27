@@ -21,3 +21,5 @@ router.route('/:userId')
 router.route('./:userId/friends/:friendId')
 .post(createUser)
 .delete(removeUser);
+
+module.exports = router;
