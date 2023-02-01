@@ -78,6 +78,25 @@ module.exports = {
             });
     },
 
+    //update thought 
+    updateThought(req, res){
+        Thought. findOneAndUpdate(
+            {_id:req.params.thoughtId},
+            req.body,
+            {new: true}
+        )
+        .then ((thought)=> {
+            if (!thought){
+                return res.status(404).json({message: 'Thought not found'});
+            }
+            res.json(thought);
+        })
+        .catch((err)=>{
+            console.log(err);
+            res.status(500).json(err);
+        })
+    },
+
     //delete thought 
     deleteThought(req, res) {
         Thought.findOneAndRemove({ _id: req.params.thoughtId })
