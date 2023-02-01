@@ -1,14 +1,39 @@
 const { ObjectId } = require('mongoose').Types;
 const { Thought, User } = require('../models');
 
+//aggregate function to get the number of thought overall 
+
+const thoughtCount = async () =>
+    Thought.aggregate()
+        .count('thoughtCount')
+        .then((numberOfThought) => numberOfThought);
+
+
+const reactionCount = async (thoughtId) =>
+    Thought.aggregate([
+        { $match: { _id: ObjectId(thoughtId) } },
+        { $unwind: '$reactions' },
+        {
+            $group: {
+                _id: ObjectId(thoughtId),
+                reactionNum: { $count: '$reactions' }
+            }
+        }
+    ])
+
+
+
 module.exports = {
 
     //get all thought
     getThought(req, res) {
         Thought.find({})
-            .then((thought) => {
-                console.log(thought);
-                res.json(thought)
+            .then(async(thought) => {
+                const thoughtOj ={
+                    thoughts,
+                    thoughtCount: await thoughtCount(),
+                }
+                return res.json(thoughtOj)
             })
             .catch((err) => res.status(500).json(err));
     },
@@ -19,19 +44,38 @@ module.exports = {
             _id: req.params.thoughtId
         })
             .select('-__v')
-            .then((thought) =>
+            .then(async (thought) =>
                 !thought
                     ? res.status(404).json({ message: 'No thought with this ID' })
-                    : res.json(thought)
+                    : res.json({
+                        thought,
+                        reactionCount: await reactionCount(req.params.thoughtId),
+
+                    })
             )
             .catch((err) => res.status(500).json(err));
     },
 
     // create a new thought 
-    createThought(req, req) {
+    createThought(req, res){
         Thought.create(req.body)
-            .then((thought) => res.json(thought))
-            .catch((err) => res.status(500).json(err));
+            .then(async (thought) => {
+                try {
+                    const user = await User.findOneAndUpdate(
+                        { _id: req.body.userId },
+                        { $push: { thoughts: thought._id } },
+                        { new: true }
+                    );
+                    res.json(thought);
+                } catch (err) {
+                    console.log(err);
+                    res.status(500).json(err);
+                }
+            })
+            .catch((err) => {
+                console.log(err);
+                res.status(500).json(err);
+            });
     },
 
     //delete thought 
