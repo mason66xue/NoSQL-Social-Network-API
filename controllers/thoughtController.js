@@ -39,7 +39,7 @@ module.exports = {
     },
 
     //get a thought 
-    getSingleThought(req, req) {
+    getSingleThought(req, res) {
         Thought.findOne({
             _id: req.params.thoughtId
         })
